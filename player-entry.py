@@ -7,7 +7,6 @@ API_URL = "https://yosaltaismwvhvbpvpzq.supabase.co"
 API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlvc2FsdGFpc213dmh2YnB2cHpxIiwicm9sZSI6ImFub24iLCJpYXQiOjE2OTU3NTU3MTQsImV4cCI6MjAxMTMzMTcxNH0.AXuDtr3a1F3bEGhkfwPF0jtJE1MgtCEN-LCYczyHv7w"
 
 supabase = create_client(API_URL, API_KEY)
-supabase
 
 class SplashScreen(tk.Tk):
     def __init__(self):
@@ -33,27 +32,34 @@ class PlayerEntryScreen(tk.Tk):
 
         def check_id():
             player_id = id_entry.get()
-            ########################################
-            ########################################
-            ## check if id exists in database     ##
-            ## fill name_from_db with result      ##
-            ## if exists                          ##
-            #f_name=supabase.table('player').select('first_name').eq('id', player_id).execute().data # fetching documents
-            #l_name=supabase.table('player').select('last_name').eq('id', player_id).execute().data # fetching documents
-            #c_name=supabase.table('player').select('codename').eq('id', player_id).execute().data # fetching documents
-            ########################################
-            ########################################
-            name_from_db = "TEMP"
-            if name_from_db: # change to if player id was found in DB
+            f_name=supabase.table('player').select('first_name').eq('id', player_id).execute().data[0] # fetching documents
+            l_name=supabase.table('player').select('last_name').eq('id', player_id).execute().data[0] # fetching documents
+            c_name=supabase.table('player').select('codename').eq('id', player_id).execute().data[0] # fetching documents
+            data = [f_name['first_name'], l_name['last_name'], c_name['codename']]
+            data_returned = []
+            print(data)
+            for name in data:
+                if len(name) > 0:
+                    data_returned.append(True)
+                if len(name) <= 0:
+                    data_returned.append(False)
+
+            if all(data_returned) and len(data_returned) == 3:
                 self.player_exists = True
                 name_entry.delete(0, END)
-                name_entry.insert(0, name_from_db)
+                name_entry.insert(0, data[2])
+                first_name_entry.delete(0, END)
+                first_name_entry.insert(0, data[0])
+                last_name_entry.delete(0, END)
+                last_name_entry.insert(0, data[1])
 
         def add_player():
             player_id = int(id_entry.get())
             player_name = name_entry.get()
             equipment_code = int(equipment_entry.get())
             team = team_chosen.get()
+            first_name = first_name_entry.get()
+            last_name = last_name_entry.get()
 
             if team == "Red":
                 team_red.player_added()
@@ -84,24 +90,21 @@ class PlayerEntryScreen(tk.Tk):
                 team_blue_players[player_id] = {"name": player_name, "equipment": equipment_code}
 
             if not self.player_exists:
-                pass
-                #########################
-                #########################
-                ## add player to DB    ##
-                #data = {
-                #    'id': player_id,
-                #    'first_name': first_name,
-                #    'last_name': last_name,
-                #    'codename': player_name
-                #}
-                #supabase.table('player').insert(data).execute() # inserting one record
-                #########################
-                #########################
+                data = {
+                    'id': player_id,
+                    'first_name': first_name,
+                    'last_name': last_name,
+                    'codename': player_name
+                }
+                supabase.table('player').insert(data).execute() # inserting one record
+            
             else:
                 self.player_exists = False
 
             id_entry.delete(0, END)
             name_entry.delete(0, END)
+            first_name_entry.delete(0, END)
+            last_name_entry.delete(0, END)
             equipment_entry.delete(0, END)
 
 
@@ -138,7 +141,7 @@ class PlayerEntryScreen(tk.Tk):
                                     command=check_id)
         check_id_button.grid(row=0, column=1, sticky="e", padx=5)
 
-        name_label = tk.Label(self, text="Enter Player Name:", 
+        name_label = tk.Label(self, text="Enter Code Name:", 
                             bg="black", fg="white", 
                             font=("Lexend Bold", 25))
         name_label.grid(row=3, column=0, sticky="e", padx=5, pady=5)
@@ -146,12 +149,32 @@ class PlayerEntryScreen(tk.Tk):
                             font=("Lexend Thin", 22), borderwidth=1)
         name_entry.grid(row=3, column=1, sticky="w", padx=5, pady=5)
 
+        first_name_frame = tk.Frame(self, bg="black")
+        first_name_frame.grid(row=4, column=0, sticky="e", padx=15)
+        first_name_label = tk.Label(first_name_frame, text="Enter First Name: ", 
+                            bg="black", fg="white", 
+                            font=("Lexend Bold", 25))
+        first_name_label.grid(row=0, column=0, sticky="e")
+        first_name_entry = tk.Entry(first_name_frame, bg="gray", fg="white",
+                            font=("Lexend Thin", 22), borderwidth=1)
+        first_name_entry.grid(row=0, column=1, sticky="w")
+
+        last_name_frame = tk.Frame(self, bg="black")
+        last_name_frame.grid(row=4, column=1, sticky="w", padx=15)
+        last_name_label = tk.Label(last_name_frame, text="Enter Last Name: ", 
+                            bg="black", fg="white", 
+                            font=("Lexend Bold", 25))
+        last_name_label.grid(row=0, column=0, sticky="e")
+        last_name_entry = tk.Entry(last_name_frame, bg="gray", fg="white",
+                            font=("Lexend Thin", 22), borderwidth=1)
+        last_name_entry.grid(row=0, column=1, sticky="w")        
+
         team_label = tk.Label(self, text="Choose Team:", 
                             bg="black", fg="white", 
                             font=("Lexend Bold", 25))
-        team_label.grid(row=4, column=0, sticky="e", padx=5, pady=5)
+        team_label.grid(row=5, column=0, sticky="e", padx=5, pady=5)
         dropdown = tk.OptionMenu(self, team_chosen, *['Red','Blue'])
-        dropdown.grid(row=4, column=1, sticky="w", padx=5, pady=5)
+        dropdown.grid(row=5, column=1, sticky="w", padx=5, pady=5)
         dropdown.configure(font=("Lexend Thin", 22), bg="black", fg="white")
         team_dropdown = self.nametowidget(dropdown.menuname)
         team_dropdown.configure(font=("Lexend Thin", 30))
@@ -159,15 +182,15 @@ class PlayerEntryScreen(tk.Tk):
         equipment_label = tk.Label(self, text="Enter Equipment ID:", 
                             bg="black", fg="white", 
                             font=("Lexend Bold", 25))
-        equipment_label.grid(row=5, column=0, sticky="e", padx=5, pady=5)
+        equipment_label.grid(row=6, column=0, sticky="e", padx=5, pady=5)
         equipment_entry = tk.Entry(self, bg="gray", fg="white",
                             font=("Lexend Thin", 22), borderwidth=1)
-        equipment_entry.grid(row=5, column=1, sticky="w", padx=5, pady=5)
+        equipment_entry.grid(row=6, column=1, sticky="w", padx=5, pady=5)
 
         add_player_button = tk.Button(self, text="Add Player",
                                 bg="gray", fg="white",
                                 command = add_player)
-        add_player_button.grid(row=6, column=0, columnspan=2, pady=10)
+        add_player_button.grid(row=7, column=0, columnspan=2, pady=10)
 
 
 
