@@ -1,5 +1,22 @@
 import tkinter as tk
 from tkinter import *
+from PIL import ImageTk, Image
+
+
+class SplashScreen(tk.Tk):
+    def __init__(self):
+        tk.Tk.__init__(self)
+        self.attributes('-fullscreen', True)
+        self.configure(bg = "black")
+
+        frame = Frame(self, width = 1280, height = 815, bg = "black")
+        frame.place(anchor = 'center', relx = 0.5, rely = 0.5)
+
+        self.img = ImageTk.PhotoImage(Image.open("photon.jpg"))
+        label = tk.Label(frame, image = self.img, borderwidth = 0)
+        label.pack(fill = BOTH, expand = YES)
+        #label.pack()
+        self.after(3000, lambda:self.destroy())
 
 class PlayerEntryScreen(tk.Tk):
     def __init__(self):
@@ -167,5 +184,7 @@ class TeamTable(tk.Frame):
 
 
 if __name__ == "__main__":
+    splash = SplashScreen()
+    splash.mainloop()
     app = PlayerEntryScreen()
     app.mainloop()
