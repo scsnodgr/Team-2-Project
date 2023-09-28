@@ -1,7 +1,13 @@
 import tkinter as tk
 from tkinter import *
 from PIL import ImageTk, Image
+from supabase import create_client
+import json
+API_URL = "https://yosaltaismwvhvbpvpzq.supabase.co"
+API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlvc2FsdGFpc213dmh2YnB2cHpxIiwicm9sZSI6ImFub24iLCJpYXQiOjE2OTU3NTU3MTQsImV4cCI6MjAxMTMzMTcxNH0.AXuDtr3a1F3bEGhkfwPF0jtJE1MgtCEN-LCYczyHv7w"
 
+supabase = create_client(API_URL, API_KEY)
+supabase
 
 class SplashScreen(tk.Tk):
     def __init__(self):
@@ -32,6 +38,9 @@ class PlayerEntryScreen(tk.Tk):
             ## check if id exists in database     ##
             ## fill name_from_db with result      ##
             ## if exists                          ##
+            #f_name=supabase.table('player').select('first_name').eq('id', player_id).execute().data # fetching documents
+            #l_name=supabase.table('player').select('last_name').eq('id', player_id).execute().data # fetching documents
+            #c_name=supabase.table('player').select('codename').eq('id', player_id).execute().data # fetching documents
             ########################################
             ########################################
             name_from_db = "TEMP"
@@ -79,6 +88,13 @@ class PlayerEntryScreen(tk.Tk):
                 #########################
                 #########################
                 ## add player to DB    ##
+                #data = {
+                #    'id': player_id,
+                #    'first_name': first_name,
+                #    'last_name': last_name,
+                #    'codename': player_name
+                #}
+                #supabase.table('player').insert(data).execute() # inserting one record
                 #########################
                 #########################
             else:
