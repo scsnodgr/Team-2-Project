@@ -14,13 +14,16 @@ class SplashScreen(tk.Tk):
         self.attributes('-fullscreen', True)
         self.configure(bg = "black")
 
-        frame = Frame(self, width = 1280, height = 815, bg = "black")
+        frame = Frame(self, bg = "black")
         frame.place(anchor = 'center', relx = 0.5, rely = 0.5)
 
-        self.img = ImageTk.PhotoImage(Image.open("photon.jpg"))
+        origImg = Image.open("photon.jpg")
+        resizeImg = origImg.resize((self.winfo_screenwidth(), self.winfo_screenheight()))
+        self.img = ImageTk.PhotoImage(resizeImg)
+        
         label = tk.Label(frame, image = self.img, borderwidth = 0)
         label.pack(fill = BOTH, expand = YES)
-        #label.pack()
+        
         self.after(3000, lambda:self.destroy())
 
 class PlayerEntryScreen(tk.Tk):
