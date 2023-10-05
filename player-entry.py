@@ -4,16 +4,8 @@ from PIL import ImageTk, Image
 from supabase import create_client
 import json
 import socket
-import platform
-import ctypes
-if platform.system() == "Windows":
-    try:
-        ctypes.windll.shcore.SetProcessDpiAwareness(2) # if your windows version >= 8.1
-    except:
-        ctypes.windll.user32.SetProcessDPIAware() # win 8.0 or less 
 DEFAULT_FONT = ("Lexend Thin", 22)
 BOLD_FONT = ("Lexend Bold", 25)
-TITLE_FONT = ("Lexend Bold", 40)
 API_URL = "https://yosaltaismwvhvbpvpzq.supabase.co"
 API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlvc2FsdGFpc213dmh2YnB2cHpxIiwicm9sZSI6ImFub24iLCJpYXQiOjE2OTU3NTU3MTQsImV4cCI6MjAxMTMzMTcxNH0.AXuDtr3a1F3bEGhkfwPF0jtJE1MgtCEN-LCYczyHv7w"
 # establish database connection
@@ -79,15 +71,7 @@ class SplashScreen(tk.Tk):
 class PlayerEntryScreen(tk.Tk):
     def __init__(self):
         tk.Tk.__init__(self)
-        self.state('zoomed')
         self.configure(bg="black")
-        # reset fonts based on screen size
-        global DEFAULT_FONT, BOLD_FONT, TITLE_FONT
-        font_base = self.winfo_screenheight()/95
-        #self.winfo_screenwidth()/150
-        DEFAULT_FONT = ("Lexend Thin", int(font_base))
-        BOLD_FONT = ("Lexend Bold", int(font_base+2))
-        TITLE_FONT = ("Lexend Bold", int(font_base*1.5))
         
         # establish boolean to track whether current player exists in database
         self.player_exists = False
@@ -229,10 +213,9 @@ class PlayerEntryScreen(tk.Tk):
 
         # create title for player entry screen contained in frame
         title_bar_frame = tk.Frame(self, bg="black")
-        title_bar_frame.place(anchor = 'center', relx = 0.5, rely = 0.5)
         title_bar_frame.grid(row=0, column=0, columnspan=2, pady=15)
         title = tk.Label(title_bar_frame, text="Player Entry", 
-                        fg="white", bg="black", font=TITLE_FONT)
+                        fg="white", bg="black", font=("Lexend Bold", 40))
         title.grid(row=0, column=1, padx=250)
 
         # add button to clear teams
@@ -375,8 +358,6 @@ class TeamTable(tk.Frame):
 
     # allows table cell's value to be set
     def set(self, row, column, value, font=DEFAULT_FONT, color="white"):
-        if(font != DEFAULT_FONT and font != BOLD_FONT and font != TITLE_FONT):
-            font = DEFAULT_FONT
         widget = self._widgets[row][column]
         widget.configure(text=value, font=font, fg=color)
 
