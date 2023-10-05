@@ -4,11 +4,13 @@ from PIL import ImageTk, Image
 from supabase import create_client
 import json
 import socket
+import platform
 import ctypes
-try:
-    ctypes.windll.shcore.SetProcessDpiAwareness(2) # if your windows version >= 8.1
-except:
-    ctypes.windll.user32.SetProcessDPIAware() # win 8.0 or less 
+if platform.system() == "Windows":
+    try:
+        ctypes.windll.shcore.SetProcessDpiAwareness(2) # if your windows version >= 8.1
+    except:
+        ctypes.windll.user32.SetProcessDPIAware() # win 8.0 or less 
 DEFAULT_FONT = ("Lexend Thin", 22)
 BOLD_FONT = ("Lexend Bold", 25)
 TITLE_FONT = ("Lexend Bold", 40)
