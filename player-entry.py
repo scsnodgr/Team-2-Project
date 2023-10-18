@@ -55,7 +55,7 @@ class SplashScreen(tk.Tk):
         frame.place(anchor = 'center', relx = 0.5, rely = 0.5)
 
         # prepare image
-        origImg = Image.open("photon.jpg")
+        origImg = Image.open("photon.jpg") #location of photon.jpg
         resizeImg = origImg.resize((self.winfo_screenwidth(), self.winfo_screenheight()))
         self.img = ImageTk.PhotoImage(resizeImg)
 
@@ -328,6 +328,34 @@ class PlayerEntryScreen(tk.Tk):
                                 activebackground="white", activeforeground="black")
         add_player_button.grid(row=7, column=0, columnspan=2, pady=10)
         add_player_button.grid_remove()
+
+
+
+###############################################################################################
+########################################## TIMER ##############################################
+###############################################################################################
+        # You should be able to just move this code chunk where you need it so it can run after pressing the START GAME button on the other screen
+        # initialize countdown timer attributes
+        self.time_left = 15*60 # you can change the total about on the timer I set it to 15min
+        self.timer_label = tk.Label(self, text=self._seconds_to_time_string(self.time_left), 
+                                    bg="black", fg="white", font=BOLD_FONT)
+        self.timer_label.grid(row=0, column=0, sticky="w", padx=10, pady=5)
+        self._update_timer()
+
+    def _update_timer(self):
+        if self.time_left > 0:
+            self.time_left -= 1
+            self.timer_label.config(text=self._seconds_to_time_string(self.time_left))
+            # Schedule the function to run after 1000ms (1 second)
+            self.after(1000, self._update_timer)
+
+    def _seconds_to_time_string(self, seconds):
+        minutes, sec = divmod(seconds, 60)
+        return "{:02}:{:02}".format(minutes, sec)
+###############################################################################################
+###############################################################################################
+###############################################################################################
+
 
 
 
