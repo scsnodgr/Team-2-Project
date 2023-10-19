@@ -4,8 +4,8 @@ from PIL import ImageTk, Image
 from supabase import create_client
 import json
 import socket
-DEFAULT_FONT = ("Lexend Thin", 22)
-BOLD_FONT = ("Lexend Bold", 25)
+DEFAULT_FONT = ("Lexend Thin", 15)
+BOLD_FONT = ("Lexend Bold", 18)
 API_URL = "https://yosaltaismwvhvbpvpzq.supabase.co"
 API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlvc2FsdGFpc213dmh2YnB2cHpxIiwicm9sZSI6ImFub24iLCJpYXQiOjE2OTU3NTU3MTQsImV4cCI6MjAxMTMzMTcxNH0.AXuDtr3a1F3bEGhkfwPF0jtJE1MgtCEN-LCYczyHv7w"
 # establish database connection
