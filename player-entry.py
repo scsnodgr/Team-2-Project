@@ -14,30 +14,40 @@ supabase = create_client(API_URL, API_KEY)
 class UDP:
     # initialize socket
     def __init__(self):
-        # server's IP address and port number
+        # server's IP address
         self.HOST = socket.gethostbyname(socket.gethostname())
-        self.HOST_PORT = 7501
 
-        # all clients IP addresses and port numbers
-        self.CLIENTS = socket.gethostbyname(socket.gethostname())
-        self.CLIENT_PORTS = 7500
+        # server's broadcast and receive ports
+        self.BROADCAST_PORT = 7500
+        self.RECEIVE_PORT = 7501
 
-        # specifies socket type (internet and UDP)
-        self.server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        # specifies socket type (internet and UDP) for broadcast and receive sockets
+        self.server_broadcast = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.server_receive = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
-        # binds socket to the server's IP address and port number
-        self.server.bind((self.HOST, self.HOST_PORT))
+        # binds sockets to the server's IP address and associated port number
+        self.server_broadcast.bind((self.HOST, self.BROADCAST_PORT))
+        self.server_receive.bind((self.HOST, self.RECEIVE_PORT))
+
+    # turns a message of the form "equipment id of player transmitting:equipment id of player hit"
+    # into a message of the form "equipment id of player hit"
+    def parse_data(self, message):
+        parts = message.split(":")
+        playerHitID = parts[1]
+        return playerHitID
+    
+    # server sends variable amount of bytes to all clients
+    def broadcast_data(self, message):
+        self.server_broadcast.sendto(message.encode('utf-8'), (self.HOST, self.BROADCAST_PORT))
+        print("Sending code to client: " + message)
 
     # server receives 1024 bytes of information from client
     def receive_data(self):
-        received_information, address = self.server.recvfrom(1024)
+        received_information, address = self.server_receive.recvfrom(1024)
         print("Information recieved from client: " + received_information.decode('utf-8'))
+        playerHitID = self.parse_data(received_information.decode('utf-8'))
+        self.broadcast_data(playerHitID)
         return received_information.decode('utf-8')
-        
-    # server sends variable amount of bytes to all clients
-    def broadcast_data(self, message):
-        self.server.sendto(message.encode('utf-8'), (self.CLIENTS, self.CLIENT_PORTS))
-        print("Sending code to client: " + message)
 # open UDP socket
 server_socket = UDP()
 
@@ -348,6 +358,8 @@ class PlayerEntryScreen(tk.Tk):
             self.timer_label.config(text=self._seconds_to_time_string(self.time_left))
             # Schedule the function to run after 1000ms (1 second)
             self.after(1000, self._update_timer)
+        else:
+            server_socket.broadcast_data("202")
 
     def _seconds_to_time_string(self, seconds):
         minutes, sec = divmod(seconds, 60)
