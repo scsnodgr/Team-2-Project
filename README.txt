@@ -6,7 +6,7 @@ Project Collaborators:
 
 To run the project:
 - Enter a terminal in the project directory (should contain player-entry.py and photon.jpg)
-- Run "python player-entry.py"
+- Run "python laser-tag.py"
 
 Note:
 - This code requires you to have Pillow and supabase installed
