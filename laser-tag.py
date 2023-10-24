@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import *
+from tkinter import ttk
 from PIL import ImageTk, Image
 from supabase import create_client
 import json
@@ -219,7 +220,9 @@ class PlayerEntryScreen(tk.Tk):
         ### after start button is clicked                       ###
         ###########################################################
         def start_game():
-            pass
+            self.after(500, self.destroy)
+
+        ttk.Style().configure('gray/black.TButton', foreground='black', background='gray', font=DEFAULT_FONT)
 
         # create title for player entry screen contained in frame
         title_bar_frame = tk.Frame(self, bg="black")
@@ -229,17 +232,15 @@ class PlayerEntryScreen(tk.Tk):
         title.grid(row=0, column=1, padx=250)
 
         # add button to clear teams
-        clear_teams_button = tk.Button(title_bar_frame, text="Empty Teams",
-                                    bg="gray", fg="white",
-                                    command=clear_teams, font=DEFAULT_FONT,
-                                    activebackground="white", activeforeground="black")
+        clear_teams_button = ttk.Button(title_bar_frame, text="Empty Teams",
+                                    style='gray/black.TButton',
+                                    command=clear_teams)
         clear_teams_button.grid(row=0, column=0, sticky="w", padx=100)
 
         # add button to start game
-        start_game_button = tk.Button(title_bar_frame, text="Start Game",
-                                    bg="gray", fg="white",
-                                    command=start_game, font=DEFAULT_FONT,
-                                    activebackground="white", activeforeground="black")
+        start_game_button = ttk.Button(title_bar_frame, text="Start Game",
+                                    style='gray/black.TButton',
+                                    command=start_game)
         start_game_button.grid(row=0, column=2, sticky="e", padx=100)
 
         # initialize tables for each team
@@ -264,10 +265,9 @@ class PlayerEntryScreen(tk.Tk):
         id_entry.grid(row=0, column=0, sticky="w")
 
         # create button to check if id exists in the database
-        check_id_button = tk.Button(id_entry_frame, text="Check ID",
-                                    bg="gray", fg="white",
-                                    command=check_id, font=DEFAULT_FONT,
-                                    activebackground="white", activeforeground="black")
+        check_id_button = ttk.Button(id_entry_frame, text="Check ID",
+                                    style='gray/black.TButton',
+                                    command=check_id)
         check_id_button.grid(row=0, column=1, sticky="e", padx=5)
 
         # initialize codename label and entry box
@@ -332,25 +332,90 @@ class PlayerEntryScreen(tk.Tk):
         equipment_entry.grid_remove()
 
         # create button to add player to table & database
-        add_player_button = tk.Button(self, text="Add Player",
-                                bg="gray", fg="white",
-                                command = add_player, font=DEFAULT_FONT,
-                                activebackground="white", activeforeground="black")
+        add_player_button = ttk.Button(self, text="Add Player",
+                                    style='gray/black.TButton',
+                                    command=add_player)
         add_player_button.grid(row=7, column=0, columnspan=2, pady=10)
         add_player_button.grid_remove()
 
 
+class PlayActionScreen(tk.Tk):
+    def __init__(self, red_team_players, blue_team_players):
+        tk.Tk.__init__(self)
+        self.configure(bg="black")
+        self.red_num_players = len(red_team_players)
+        self.blue_num_players = len(blue_team_players)
+        self.red_team_scores = {}
+        self.blue_team_scores = {}
 
-###############################################################################################
-########################################## TIMER ##############################################
-###############################################################################################
-        # You should be able to just move this code chunk where you need it so it can run after pressing the START GAME button on the other screen
-        # initialize countdown timer attributes
-        self.time_left = 15*60 # you can change the total about on the timer I set it to 15min
-        self.timer_label = tk.Label(self, text=self._seconds_to_time_string(self.time_left), 
+        for player in red_team_players.values():
+            self.red_team_scores[player["equipment"]] = {"name":  player["name"], 
+                                                         "score": 0}
+        for player in blue_team_players.values():
+            self.blue_team_scores[player["equipment"]] = {"name":  player["name"], 
+                                                         "score": 0}
+        
+        def update_score_tables():
+
+            # still need to implement sorting by largest score
+
+            red_team_equipment = self.red_team_scores.keys()
+            blue_team_equipment = self.blue_team_scores.keys()
+            red_total_score = sum([player["score"] for player in self.red_team_scores.values()])
+            blue_total_score = sum([player["score"] for player in self.blue_team_scores.values()])
+
+            for j, id in enumerate(red_team_equipment):
+                team_red.set(j, 0, self.red_team_scores[id]["name"], color = "red")
+                team_red.set(j, 1, self.red_team_scores[id]["score"])
+            team_red.set(team_red.nrow - 1, 0, "Total", color = "red")
+            team_red.set(team_red.nrow - 1, 1, red_total_score)
+
+            for j, id in enumerate(blue_team_equipment):
+                team_blue.set(j, 0, self.blue_team_scores[id]["name"], color = "deep sky blue")
+                team_blue.set(j, 1, self.blue_team_scores[id]["score"])
+            team_blue.set(team_blue.nrow - 1, 0, "Total", color = "deep sky blue")
+            team_blue.set(team_blue.nrow - 1, 1, blue_total_score)
+
+        title_bar = tk.Frame(self, bg="black")
+        title_bar.grid(row=0, column=0, columnspan=2, pady=15)
+
+        self.game_started = False
+        self.time_left = 30 
+        self.timer_label = tk.Label(title_bar, text=self._seconds_to_time_string(self.time_left), 
                                     bg="black", fg="white", font=BOLD_FONT)
-        self.timer_label.grid(row=0, column=0, sticky="w", padx=10, pady=5)
+        self.timer_label.grid(row=0, column=1)
         self._update_timer()
+
+        team_red_label = tk.Label(title_bar, text="Red Team", 
+                            bg="black", fg="red", 
+                            font=BOLD_FONT)
+        team_red_label.grid(row=0, column=0, sticky="w", padx=250)
+
+        team_blue_label = tk.Label(title_bar, text="Blue Team", 
+                            bg="black", fg="deep sky blue", 
+                            font=BOLD_FONT)
+        team_blue_label.grid(row=0, column=2, sticky="e", padx = 250)
+
+
+        team_red = TeamTable(self, self.red_num_players + 2, 2, width=30)
+        team_blue = TeamTable(self, self.blue_num_players + 2, 2, width=30)
+        team_red.grid(row=1, column=0, padx=15, pady=5)
+        team_blue.grid(row=1, column=1, padx=15, pady=5)
+        update_score_tables()
+
+        activity_label_red = tk.Label(self, text="Activity",
+                                      bg="black", fg="red",
+                                      font=BOLD_FONT)
+        activity_label_blue = tk.Label(self, text="Activity",
+                                       bg = "black", fg="deep sky blue",
+                                       font=BOLD_FONT)
+        activity_label_red.grid(row=2, column=0, pady=5, sticky="s")
+        activity_label_blue.grid(row=2, column=1, pady=5, sticky="s")
+
+        team_red_activity = TeamTable(self, 10, 1, width=60)
+        team_blue_activity = TeamTable(self, 10, 1, width=60)
+        team_red_activity.grid(row=3, column=0, pady=5, sticky="n")
+        team_blue_activity.grid(row=3, column=1, pady=5, sticky="n")
 
     def _update_timer(self):
         if self.time_left > 0:
@@ -359,20 +424,22 @@ class PlayerEntryScreen(tk.Tk):
             # Schedule the function to run after 1000ms (1 second)
             self.after(1000, self._update_timer)
         else:
-            server_socket.broadcast_data("202")
+            if self.game_started == True:
+                return # need to broadcast end game code
+            else:
+                self.time_left = 6 * 60
+                server_socket.broadcast_data("202")
+                self.game_started = True
+                self.after(1000, self._update_timer)
 
     def _seconds_to_time_string(self, seconds):
         minutes, sec = divmod(seconds, 60)
         return "{:02}:{:02}".format(minutes, sec)
-###############################################################################################
-###############################################################################################
-###############################################################################################
-
 
 
 
 class TeamTable(tk.Frame):
-    def __init__(self, parent, rows, columns):
+    def __init__(self, parent, rows, columns, width=20):
         tk.Frame.__init__(self, parent, background="white")
         # list to store all cells of the table
         self._widgets = []
@@ -385,7 +452,7 @@ class TeamTable(tk.Frame):
             current_row = []
             for column in range(self.ncol):
                 label = tk.Label(self, text=" ", 
-                                 borderwidth=0, width=20,
+                                 borderwidth=0, width=width,
                                  background="black", foreground="red",
                                  font=DEFAULT_FONT)
                 label.grid(row=row, column=column, sticky="nsew", padx=1, pady=1)
@@ -416,5 +483,9 @@ class TeamTable(tk.Frame):
 if __name__ == "__main__":
     splash = SplashScreen()
     splash.mainloop()
-    app = PlayerEntryScreen()
-    app.mainloop()
+    player_entry = PlayerEntryScreen()
+    player_entry.mainloop()
+    red_team = player_entry.team_red_players
+    blue_team = player_entry.team_blue_players
+    play_action = PlayActionScreen(red_team, blue_team)
+    play_action.mainloop()
