@@ -426,7 +426,6 @@ class PlayActionScreen(tk.Tk):
             self.timer_label.config(text=self._seconds_to_time_string(self.time_left))
             if self.time_left == 17:
                 audio = random.choice(self.audio_tracks)
-                print(audio)
                 playsound(audio, block = False)
             # Schedule the function to run after 1000ms (1 second)
             self.after(1000, self._update_timer)
