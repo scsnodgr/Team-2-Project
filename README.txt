@@ -12,3 +12,5 @@ To run the project:
 Note:
 - This code requires you to have Pillow and supabase installed
   - To install these dependencies, go into a terminal and "pip install Pillow supabase"
+- This code also requires a specific version of playsound (the most current version will not work properly)
+  - To install this dependency, go into a terminal and "pip install playsound==1.2.2"

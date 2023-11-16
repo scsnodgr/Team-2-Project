@@ -3,6 +3,8 @@ from tkinter import *
 from tkinter import ttk
 from PIL import ImageTk, Image
 from supabase import create_client
+from playsound import playsound
+import random
 import json
 import socket
 DEFAULT_FONT = ("Lexend Thin", 15)
@@ -347,6 +349,7 @@ class PlayActionScreen(tk.Tk):
         self.blue_num_players = len(blue_team_players)
         self.red_team_scores = {}
         self.blue_team_scores = {}
+        self.audio_tracks = ['.\\Audio\\Track01.mp3', '.\\Audio\\Track02.mp3', '.\\Audio\\Track03.mp3', '.\\Audio\\Track04.mp3', '.\\Audio\\Track05.mp3', '.\\Audio\\Track06.mp3', '.\\Audio\\Track07.mp3', '.\\Audio\\Track08.mp3']
 
         for player in red_team_players.values():
             self.red_team_scores[player["equipment"]] = {"name":  player["name"], 
@@ -421,6 +424,10 @@ class PlayActionScreen(tk.Tk):
         if self.time_left > 0:
             self.time_left -= 1
             self.timer_label.config(text=self._seconds_to_time_string(self.time_left))
+            if self.time_left == 17:
+                audio = random.choice(self.audio_tracks)
+                print(audio)
+                playsound(audio, block = False)
             # Schedule the function to run after 1000ms (1 second)
             self.after(1000, self._update_timer)
         else:
