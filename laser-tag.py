@@ -20,6 +20,12 @@ class UDP:
         # server's IP address
         self.HOST = socket.gethostbyname(socket.gethostname())
 
+        # client's IP address and port number, temporarily set to 1 1 
+        self.client_address = ("1", "1")
+
+        # player who scored 10 points from hitting another player, temporarily set to 1111
+        self.player_who_scored = 1111
+
         # server's broadcast and receive ports
         self.BROADCAST_PORT = 7500
         self.RECEIVE_PORT = 7501
@@ -29,6 +35,7 @@ class UDP:
         self.server_receive = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
         # binds sockets to the server's IP address and associated port number
+        # self.server_broadcast.bind((self.HOST, self.BROADCAST_PORT))
         self.server_broadcast.bind((self.HOST, self.BROADCAST_PORT))
         self.server_receive.bind((self.HOST, self.RECEIVE_PORT))
 
@@ -36,20 +43,22 @@ class UDP:
     # into a message of the form "equipment id of player hit"
     def parse_data(self, message):
         parts = message.split(":")
-        playerHitID = parts[1]
-        return playerHitID
+        self.player_who_scored = parts[0]
+        player_hit_ID = parts[1]
+        return player_hit_ID
     
     # server sends variable amount of bytes to all clients
     def broadcast_data(self, message):
-        self.server_broadcast.sendto(message.encode('utf-8'), (self.HOST, self.BROADCAST_PORT))
-        print("Sending code to client: " + message)
+        self.server_broadcast.sendto(message.encode('utf-8'), self.client_address)
+        print("Sending " + message + " to traffic generator")
 
     # server receives 1024 bytes of information from client
     def receive_data(self):
         received_information, address = self.server_receive.recvfrom(1024)
-        print("Information recieved from client: " + received_information.decode('utf-8'))
-        playerHitID = self.parse_data(received_information.decode('utf-8'))
-        self.broadcast_data(playerHitID)
+        self.client_address = address
+        print("\nInformation recieved from traffic generator: " + received_information.decode('utf-8'))
+        player_hit_ID = self.parse_data(received_information.decode('utf-8'))
+        self.broadcast_data(player_hit_ID)
         return received_information.decode('utf-8')
 # open UDP socket
 server_socket = UDP()
@@ -77,7 +86,7 @@ class SplashScreen(tk.Tk):
         label.pack(fill = BOTH, expand = YES)
         
         # destroy splash screen after 3 seconds
-        self.after(3000, lambda:self.destroy())
+        self.after(3000, self.destroy)
 
 
 
@@ -222,7 +231,12 @@ class PlayerEntryScreen(tk.Tk):
         ### after start button is clicked                       ###
         ###########################################################
         def start_game():
+            red_team = self.team_red_players
+            blue_team = self.team_blue_players
+            play_action = PlayActionScreen(red_team, blue_team)
             self.after(500, self.destroy)
+            play_action.mainloop()
+            
 
         ttk.Style().configure('gray/black.TButton', foreground='black', background='gray', font=DEFAULT_FONT)
 
@@ -349,7 +363,9 @@ class PlayActionScreen(tk.Tk):
         self.blue_num_players = len(blue_team_players)
         self.red_team_scores = {}
         self.blue_team_scores = {}
-        self.audio_tracks = ['.\\Audio\\Track01.mp3', '.\\Audio\\Track02.mp3', '.\\Audio\\Track03.mp3', '.\\Audio\\Track04.mp3', '.\\Audio\\Track05.mp3', '.\\Audio\\Track06.mp3', '.\\Audio\\Track07.mp3', '.\\Audio\\Track08.mp3']
+        self.red_team_activity = []
+        self.blue_team_activity = []
+        self.audio_tracks =  ['.\\Audio\\Track01.mp3', '.\\Audio\\Track02.mp3', '.\\Audio\\Track03.mp3', '.\\Audio\\Track04.mp3', '.\\Audio\\Track05.mp3', '.\\Audio\\Track06.mp3', '.\\Audio\\Track07.mp3', '.\\Audio\\Track08.mp3']
 
         for player in red_team_players.values():
             self.red_team_scores[player["equipment"]] = {"name":  player["name"], 
@@ -358,36 +374,148 @@ class PlayActionScreen(tk.Tk):
             self.blue_team_scores[player["equipment"]] = {"name":  player["name"], 
                                                          "score": 0}
         
-        def update_score_tables():
-
-            # still need to implement sorting by largest score
+        def update_score_tables(self):
+            # sort score dictionaries
+            self.red_team_scores = dict(sorted(self.red_team_scores.items(), key = lambda x: x[1]["score"], reverse=True))
+            self.blue_team_scores = dict(sorted(self.blue_team_scores.items(), key = lambda x: x[1]["score"], reverse=True))
 
             red_team_equipment = self.red_team_scores.keys()
             blue_team_equipment = self.blue_team_scores.keys()
             red_total_score = sum([player["score"] for player in self.red_team_scores.values()])
             blue_total_score = sum([player["score"] for player in self.blue_team_scores.values()])
 
+            # fill total rows
+            team_red.set(team_red.nrow - 1, 0, "Total", color = "red")
+            team_blue.set(team_blue.nrow - 1, 0, "Total", color = "deep sky blue")
+            # if game_started, flash high total score
+            if self.game_started:
+                if self.time_left % 2 == 0:
+                    team_red.set(team_red.nrow - 1, 1, red_total_score)
+                    team_blue.set(team_blue.nrow - 1, 1, blue_total_score)
+                elif (self.time_left % 2 == 1) and (red_total_score > blue_total_score):
+                    team_red.set(team_red.nrow - 1, 1, " ")
+                    team_blue.set(team_blue.nrow - 1, 1, blue_total_score)
+                elif (self.time_left % 2 == 1) and (blue_total_score > red_total_score):
+                    team_red.set(team_red.nrow - 1, 1, red_total_score)
+                    team_blue.set(team_blue.nrow - 1, 1, " ")
+
+            # fill red team score table
             for j, id in enumerate(red_team_equipment):
                 team_red.set(j, 0, self.red_team_scores[id]["name"], color = "red")
-                team_red.set(j, 1, self.red_team_scores[id]["score"])
-            team_red.set(team_red.nrow - 1, 0, "Total", color = "red")
-            team_red.set(team_red.nrow - 1, 1, red_total_score)
+                # flash high scores
+                if self.game_started:
+                    if (j == 0) and (self.time_left % 2 == 0):
+                        team_red.set(j, 1, self.red_team_scores[id]["score"])
+                    elif (j == 0) and (self.time_left % 2 == 1):
+                        team_red.set(j, 1, " ")
+                    else:
+                        team_red.set(j, 1, self.red_team_scores[id]["score"])
 
+            # fill blue team score tablef
             for j, id in enumerate(blue_team_equipment):
                 team_blue.set(j, 0, self.blue_team_scores[id]["name"], color = "deep sky blue")
-                team_blue.set(j, 1, self.blue_team_scores[id]["score"])
-            team_blue.set(team_blue.nrow - 1, 0, "Total", color = "deep sky blue")
-            team_blue.set(team_blue.nrow - 1, 1, blue_total_score)
+                # flash high scores
+                if self.game_started:
+                    if (j == 0) and (self.time_left % 2 == 0):
+                        team_blue.set(j, 1, self.blue_team_scores[id]["score"])
+                    elif (j == 0) and (self.time_left % 2 == 1):
+                        team_blue.set(j, 1, " ")
+                    else:
+                        team_blue.set(j, 1, self.blue_team_scores[id]["score"])
+
+        def update_activity_log(self, player_hit, player_scored):
+            # inserting message into red activity log if red scored
+            if player_scored in self.red_team_scores.keys():
+                # check if base hit
+                if player_hit == 43:
+                    hit_name = "BLUE BASE"
+                else:
+                    hit_name = self.blue_team_scores[player_hit]["name"]
+                scored_name = self.red_team_scores[player_scored]["name"]
+                message = f'{scored_name} hit {hit_name}'
+                self.red_team_activity.insert(0, message)
+            # inserting message into blue activity log if blue scored
+            else:
+                # check if base hit
+                if player_hit == 53:
+                    hit_name = "RED BASE"
+                else:
+                    hit_name = self.red_team_scores[player_hit]["name"]
+                scored_name = self.blue_team_scores[player_scored]["name"]
+                message = f'{scored_name} hit {hit_name}'
+                self.blue_team_activity.insert(0, message)
+
+            # keep activity log length at 10
+            if len(self.red_team_activity) > 10:
+                self.red_team_activity = self.red_team_activity[:-1]
+            if len(self.blue_team_activity) > 10:
+                self.blue_team_activity = self.blue_team_activity[:-1]
+
+            # fill activity tables
+            for i, message in enumerate(self.red_team_activity):
+                team_red_activity_table.set(i, 0, message)
+            for i, message in enumerate(self.blue_team_activity):
+                team_blue_activity_table.set(i, 0, message)
+
+        def _seconds_to_time_string(self, seconds):
+            minutes, sec = divmod(seconds, 60)
+            return "{:02}:{:02}".format(minutes, sec)
+
+        def update_timer(self):
+            if self.time_left > 0:
+                self.time_left -= 1
+                self.timer_label.config(text=_seconds_to_time_string(self, self.time_left))
+                if self.time_left == 17:
+                    audio = random.choice(self.audio_tracks)
+                    #playsound(audio, block = False)
+                if self.game_started == True:
+                    player_hit = server_socket.receive_data().split(":")[1]
+                    player_who_scored = server_socket.player_who_scored
+                    if player_who_scored in self.red_team_scores.keys():
+                        # check if base was hit
+                        if player_hit == 43:
+                            self.red_team_scores[player_who_scored]["score"] += 100
+                        else:
+                            self.red_team_scores[player_who_scored]["score"] += 10
+                    else:
+                        # check if base was hit
+                        if player_hit == 53:
+                            self.blue_team_scores[player_who_scored]["score"] += 100
+                        else:
+                            self.blue_team_scores[player_who_scored]["score"] += 10
+                    update_score_tables(self)
+                    update_activity_log(self, player_hit, player_who_scored)    
+                # Schedule the function to run after 1000ms (1 second)
+                self.after(1000, update_timer, self)
+            else:
+                if self.game_started == True:
+                    # server broadcasts code 221 three times 
+                    server_socket.broadcast_data("221")
+                    server_socket.broadcast_data("221")
+                    server_socket.broadcast_data("221")
+                    return_button.grid()
+                    return
+                else:
+                    # start game with 6 minute timer
+                    self.time_left = 6 * 60
+                    server_socket.broadcast_data("202")
+                    self.game_started = True
+                    self.after(1000, update_timer, self)
+        
+        def return_to_player_entry(self):
+            player_entry = PlayerEntryScreen()
+            self.after(250, self.destroy)
+            player_entry.mainloop()
 
         title_bar = tk.Frame(self, bg="black")
         title_bar.grid(row=0, column=0, columnspan=2, pady=15)
 
         self.game_started = False
         self.time_left = 30 
-        self.timer_label = tk.Label(title_bar, text=self._seconds_to_time_string(self.time_left), 
+        self.timer_label = tk.Label(title_bar, text=_seconds_to_time_string(self, self.time_left), 
                                     bg="black", fg="white", font=BOLD_FONT)
         self.timer_label.grid(row=0, column=1)
-        self._update_timer()
+        update_timer(self)
 
         team_red_label = tk.Label(title_bar, text="Red Team", 
                             bg="black", fg="red", 
@@ -404,7 +532,7 @@ class PlayActionScreen(tk.Tk):
         team_blue = TeamTable(self, self.blue_num_players + 2, 2, width=30)
         team_red.grid(row=1, column=0, padx=15, pady=5)
         team_blue.grid(row=1, column=1, padx=15, pady=5)
-        update_score_tables()
+        update_score_tables(self)
 
         activity_label_red = tk.Label(self, text="Activity",
                                       bg="black", fg="red",
@@ -415,32 +543,19 @@ class PlayActionScreen(tk.Tk):
         activity_label_red.grid(row=2, column=0, pady=5, sticky="s")
         activity_label_blue.grid(row=2, column=1, pady=5, sticky="s")
 
-        team_red_activity = TeamTable(self, 10, 1, width=60)
-        team_blue_activity = TeamTable(self, 10, 1, width=60)
-        team_red_activity.grid(row=3, column=0, pady=5, sticky="n")
-        team_blue_activity.grid(row=3, column=1, pady=5, sticky="n")
+        team_red_activity_table = TeamTable(self, 10, 1, width=60)
+        team_blue_activity_table = TeamTable(self, 10, 1, width=60)
+        team_red_activity_table.grid(row=3, column=0, pady=5, sticky="n")
+        team_blue_activity_table.grid(row=3, column=1, pady=5, sticky="n")
 
-    def _update_timer(self):
-        if self.time_left > 0:
-            self.time_left -= 1
-            self.timer_label.config(text=self._seconds_to_time_string(self.time_left))
-            if self.time_left == 17:
-                audio = random.choice(self.audio_tracks)
-                playsound(audio, block = False)
-            # Schedule the function to run after 1000ms (1 second)
-            self.after(1000, self._update_timer)
-        else:
-            if self.game_started == True:
-                return # need to broadcast end game code
-            else:
-                self.time_left = 6 * 60
-                server_socket.broadcast_data("202")
-                self.game_started = True
-                self.after(1000, self._update_timer)
+        return_command = lambda:return_to_player_entry(self)
+        return_button = ttk.Button(self, text="Return to Player Entry",
+                                    style='gray/black.TButton',
+                                    command=return_command)
+        return_button.grid(row=0, column=0, columnspan=2)
+        return_button.grid_remove()
 
-    def _seconds_to_time_string(self, seconds):
-        minutes, sec = divmod(seconds, 60)
-        return "{:02}:{:02}".format(minutes, sec)
+        
 
 
 
@@ -487,11 +602,8 @@ class TeamTable(tk.Frame):
 
 
 if __name__ == "__main__":
+    server_socket.receive_data()
     splash = SplashScreen()
     splash.mainloop()
     player_entry = PlayerEntryScreen()
     player_entry.mainloop()
-    red_team = player_entry.team_red_players
-    blue_team = player_entry.team_blue_players
-    play_action = PlayActionScreen(red_team, blue_team)
-    play_action.mainloop()
