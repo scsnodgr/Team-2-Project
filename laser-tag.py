@@ -20,16 +20,6 @@ class UDP:
         # server's IP address
         self.HOST = socket.gethostbyname(socket.gethostname())
 
-        # client's IP address and port number, temporarily set to 1 1 
-        self.client_address = ("1", "1")
-
-        # player who scored 10 points from hitting another player, temporarily set to 1111
-        self.player_who_scored = 1111
-
-        # to be added
-        # player who scored 100 points from hitting the base, temporarily set to 1111
-        # self.player_who_scored_base = 1111
-
         # server's broadcast and receive ports
         self.BROADCAST_PORT = 7500
         self.RECEIVE_PORT = 7501
@@ -39,7 +29,6 @@ class UDP:
         self.server_receive = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
         # binds sockets to the server's IP address and associated port number
-        # self.server_broadcast.bind((self.HOST, self.BROADCAST_PORT))
         self.server_broadcast.bind((self.HOST, self.BROADCAST_PORT))
         self.server_receive.bind((self.HOST, self.RECEIVE_PORT))
 
@@ -47,22 +36,20 @@ class UDP:
     # into a message of the form "equipment id of player hit"
     def parse_data(self, message):
         parts = message.split(":")
-        self.player_who_scored = parts[0]
-        player_hit_ID = parts[1]
-        return player_hit_ID
+        playerHitID = parts[1]
+        return playerHitID
     
     # server sends variable amount of bytes to all clients
     def broadcast_data(self, message):
-        self.server_broadcast.sendto(message.encode('utf-8'), self.client_address)
-        print("Sending " + message + " to traffic generator")
+        self.server_broadcast.sendto(message.encode('utf-8'), (self.HOST, self.BROADCAST_PORT))
+        print("Sending code to client: " + message)
 
     # server receives 1024 bytes of information from client
     def receive_data(self):
         received_information, address = self.server_receive.recvfrom(1024)
-        self.client_address = address
-        print("\nInformation recieved from traffic generator: " + received_information.decode('utf-8'))
-        player_hit_ID = self.parse_data(received_information.decode('utf-8'))
-        self.broadcast_data(player_hit_ID)
+        print("Information recieved from client: " + received_information.decode('utf-8'))
+        playerHitID = self.parse_data(received_information.decode('utf-8'))
+        self.broadcast_data(playerHitID)
         return received_information.decode('utf-8')
 # open UDP socket
 server_socket = UDP()
@@ -362,7 +349,7 @@ class PlayActionScreen(tk.Tk):
         self.blue_num_players = len(blue_team_players)
         self.red_team_scores = {}
         self.blue_team_scores = {}
-        self.audio_tracks = ['./Audio/Track01.mp3', './Audio/Track02.mp3', './Audio/Track03.mp3', './Audio/Track04.mp3', './Audio/Track05.mp3', './Audio/Track06.mp3', './Audio/Track07.mp3', './Audio/Track08.mp3']
+        self.audio_tracks = ['.\\Audio\\Track01.mp3', '.\\Audio\\Track02.mp3', '.\\Audio\\Track03.mp3', '.\\Audio\\Track04.mp3', '.\\Audio\\Track05.mp3', '.\\Audio\\Track06.mp3', '.\\Audio\\Track07.mp3', '.\\Audio\\Track08.mp3']
 
         for player in red_team_players.values():
             self.red_team_scores[player["equipment"]] = {"name":  player["name"], 
@@ -440,19 +427,11 @@ class PlayActionScreen(tk.Tk):
             if self.time_left == 17:
                 audio = random.choice(self.audio_tracks)
                 playsound(audio, block = False)
-            if self.game_started == True:
-                server_socket.receive_data()
-                # equipment ID of player who scored 10 points from hitting another player
-                server_socket.player_who_scored
             # Schedule the function to run after 1000ms (1 second)
             self.after(1000, self._update_timer)
         else:
             if self.game_started == True:
-                # server broadcasts code 221 three times 
-                server_socket.broadcast_data("221")
-                server_socket.broadcast_data("221")
-                server_socket.broadcast_data("221")
-                return
+                return # need to broadcast end game code
             else:
                 self.time_left = 6 * 60
                 server_socket.broadcast_data("202")
@@ -508,7 +487,6 @@ class TeamTable(tk.Frame):
 
 
 if __name__ == "__main__":
-    server_socket.receive_data()
     splash = SplashScreen()
     splash.mainloop()
     player_entry = PlayerEntryScreen()
