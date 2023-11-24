@@ -467,7 +467,7 @@ class PlayActionScreen(tk.Tk):
                 self.timer_label.config(text=_seconds_to_time_string(self, self.time_left))
                 if self.time_left == 17:
                     audio = random.choice(self.audio_tracks)
-                    #playsound(audio, block = False)
+                    playsound(audio, block = False)
                 if self.game_started == True:
                     player_hit = server_socket.receive_data().split(":")[1]
                     player_who_scored = server_socket.player_who_scored
