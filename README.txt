@@ -15,3 +15,4 @@ Note:
   - To install these dependencies, go into a terminal and "pip install Pillow supabase"
 - This code also requires a specific version of playsound (the most current version will not work properly)
   - To install this dependency, go into a terminal and "pip install playsound==1.2.2"
+- The return to player_entry screen button will appear when the timer runs out
