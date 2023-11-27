@@ -77,7 +77,7 @@ class SplashScreen(tk.Tk):
         frame.place(anchor = 'center', relx = 0.5, rely = 0.5)
 
         # prepare image
-        origImg = Image.open("photon.jpg") #location of photon.jpg
+        origImg = Image.open("photon.jpg")
         resizeImg = origImg.resize((self.winfo_screenwidth(), self.winfo_screenheight()))
         self.img = ImageTk.PhotoImage(resizeImg)
 
@@ -367,6 +367,8 @@ class PlayActionScreen(tk.Tk):
         self.blue_team_activity = []
         self.audio_tracks =  ['.\\Audio\\Track01.mp3', '.\\Audio\\Track02.mp3', '.\\Audio\\Track03.mp3', '.\\Audio\\Track04.mp3', '.\\Audio\\Track05.mp3', '.\\Audio\\Track06.mp3', '.\\Audio\\Track07.mp3', '.\\Audio\\Track08.mp3']
 
+
+
         for player in red_team_players.values():
             self.red_team_scores[player["equipment"]] = {"name":  player["name"], 
                                                          "score": 0}
@@ -427,20 +429,27 @@ class PlayActionScreen(tk.Tk):
             # inserting message into red activity log if red scored
             if player_scored in self.red_team_scores.keys():
                 # check if base hit
-                if player_hit == 43:
+                if player_hit == '53':
                     hit_name = "BLUE BASE"
-                else:
+                elif player_hit in self.blue_team_scores:
                     hit_name = self.blue_team_scores[player_hit]["name"]
+                else:
+                    hit_name = "Unknown Player"
+
                 scored_name = self.red_team_scores[player_scored]["name"]
                 message = f'{scored_name} hit {hit_name}'
                 self.red_team_activity.insert(0, message)
+
             # inserting message into blue activity log if blue scored
             else:
                 # check if base hit
-                if player_hit == 53:
+                if player_hit == '43':
                     hit_name = "RED BASE"
-                else:
+                elif player_hit in self.red_team_scores:
                     hit_name = self.red_team_scores[player_hit]["name"]
+                else:
+                    hit_name = "Unknown Player"
+
                 scored_name = self.blue_team_scores[player_scored]["name"]
                 message = f'{scored_name} hit {hit_name}'
                 self.blue_team_activity.insert(0, message)
@@ -457,6 +466,7 @@ class PlayActionScreen(tk.Tk):
             for i, message in enumerate(self.blue_team_activity):
                 team_blue_activity_table.set(i, 0, message)
 
+
         def _seconds_to_time_string(self, seconds):
             minutes, sec = divmod(seconds, 60)
             return "{:02}:{:02}".format(minutes, sec)
@@ -468,9 +478,26 @@ class PlayActionScreen(tk.Tk):
                 if self.time_left == 17:
                     audio = random.choice(self.audio_tracks)
                     playsound(audio, block = False)
+
                 if self.game_started == True:
-                    player_hit = server_socket.receive_data().split(":")[1]
+                    player_hit_data = server_socket.receive_data().split(":")
+                    player_hit = int(player_hit_data[1])
                     player_who_scored = server_socket.player_who_scored
+
+                    # Add 'B' in front of the player's name if they hit a base
+                    if player_hit in [43, 53]:  # Base hit cases
+                        # Determine which team the player belongs to
+                        if player_who_scored in self.red_team_scores:
+                            team_scores = self.red_team_scores
+                        else:
+                            team_scores = self.blue_team_scores
+
+                        original_name = team_scores[player_who_scored]["name"]
+                        team_scores[player_who_scored]["name"] = "Ⓑ " + original_name
+
+                        # Schedule to revert the player's name
+                        self.after(5000, lambda player_id=player_who_scored, name=original_name: self.revert_player_name(player_id, name))
+
                     if player_who_scored in self.red_team_scores.keys():
                         # check if base was hit
                         if player_hit == 43:
@@ -483,8 +510,10 @@ class PlayActionScreen(tk.Tk):
                             self.blue_team_scores[player_who_scored]["score"] += 100
                         else:
                             self.blue_team_scores[player_who_scored]["score"] += 10
+
                     update_score_tables(self)
-                    update_activity_log(self, player_hit, player_who_scored)    
+                    update_activity_log(self, str(player_hit), player_who_scored)  # Convert player_hit back to string
+
                 # Schedule the function to run after 1000ms (1 second)
                 self.after(1000, update_timer, self)
             else:
@@ -494,7 +523,6 @@ class PlayActionScreen(tk.Tk):
                     server_socket.broadcast_data("221")
                     server_socket.broadcast_data("221")
                     return_button.grid()
-                    return
                 else:
                     # start game with 6 minute timer
                     self.time_left = 6 * 60
@@ -502,10 +530,26 @@ class PlayActionScreen(tk.Tk):
                     self.game_started = True
                     self.after(1000, update_timer, self)
         
+        def revert_player_name(self, player_id, original_name):
+         # Revert player's name in the correct team
+            if player_id in self.red_team_scores:
+                self.red_team_scores[player_id]["name"] = original_name
+                update_score_tables(self)  # Update the score table to reflect the name change
+            elif player_id in self.blue_team_scores:
+                self.blue_team_scores[player_id]["name"] = original_name
+                update_score_tables(self)  # Update the score table to reflect the name change
+
+
+
+
+        
         def return_to_player_entry(self):
             player_entry = PlayerEntryScreen()
             self.after(250, self.destroy)
             player_entry.mainloop()
+
+
+
 
         title_bar = tk.Frame(self, bg="black")
         title_bar.grid(row=0, column=0, columnspan=2, pady=15)
