@@ -6,7 +6,7 @@ Project Collaborators:
 
 To run the project:
 - Run on a Windows machine (MacOS has responsiveness issues with tkinter that make the program difficult to use)
-- Enter a terminal in the project directory (should contain laser-tag.py, python_trafficgenerator_v2.py, Audio, and photon.jpg)
+- Enter a terminal in the project directory (should contain laser-tag.py, python_trafficgenerator_v2.py, Audio folder, and photon.jpg)
 - Run "python laser-tag.py" first, then run "python python_trafficgenerator_v2.py" in a separate terminal
   - laser-tag.py will not open any window until python_trafficgenerator_v2.py has been run and prompts answered
 
